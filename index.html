@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiply Quest!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #d4c5f9 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 600px;
+            height: 100vh;
+            max-height: 900px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Language switcher */
+        #langBtn {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            font-size: 2rem;
+            background: rgba(255,255,255,0.7);
+            border: none;
+            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #langBtn:hover { transform: scale(1.1); }
+        #langBtn:active { transform: scale(0.95); }
+
+        /* Fixed top-left buttons: mic + restart */
+        .fixed-top-left {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 100;
+            display: flex;
+            gap: 8px;
+        }
+
+        #micBtnFixed {
+            font-size: 1.5rem;
+            background: rgba(255,255,255,0.7);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #micBtnFixed:hover { background: rgba(255,255,255,0.9); transform: scale(1.1); }
+        #micBtnFixed:active { transform: scale(0.95); }
+        #micBtnFixed.listening {
+            border-color: #ef4444;
+            background: rgba(239,68,68,0.15);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        #restartBtnFixed {
+            font-size: 1.3rem;
+            background: rgba(255,255,255,0.7);
+            border: none;
+            border-radius: 12px;
+            width: 52px;
+            height: 52px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #restartBtnFixed:hover { background: rgba(255,255,255,0.9); transform: scale(1.1); }
+        #restartBtnFixed:active { transform: scale(0.95); }
+
+        /* ===== START SCREEN ===== */
+        #startScreen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 24px;
+            padding: 32px;
+            text-align: center;
+        }
+
+        #startScreen h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #4c1d95;
+            text-shadow: 2px 2px 0 rgba(255,255,255,0.5);
+        }
+
+        #startScreen p {
+            font-size: 1.2rem;
+            color: #6b21a8;
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            padding: 16px 48px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+            color: white;
+        }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+        .btn:active { transform: scale(0.97); }
+
+        .btn-start {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            box-shadow: 0 4px 12px rgba(34,197,94,0.4);
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+        }
+
+        /* ===== PLAY SCREEN ===== */
+        #playScreen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 16px;
+        }
+
+        .play-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        #progress {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6b21a8;
+            background: rgba(255,255,255,0.6);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+            50% { box-shadow: 0 0 0 12px rgba(239,68,68,0); }
+        }
+
+        .timer-container {
+            position: relative;
+            width: 56px;
+            height: 56px;
+        }
+
+        #timerCanvas {
+            width: 56px;
+            height: 56px;
+        }
+
+        #timerText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #22c55e;
+        }
+
+        #challenge {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #4c1d95;
+            margin: 12px 0;
+            text-align: center;
+        }
+
+        #ballCanvas {
+            flex: 1;
+            width: 100%;
+            max-width: 500px;
+            min-height: 200px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.3);
+        }
+
+        #inputArea {
+            margin: 12px 0 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        #inputDisplay {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: #4c1d95;
+            background: rgba(255,255,255,0.7);
+            padding: 8px 32px;
+            border-radius: 12px;
+            min-width: 120px;
+            text-align: center;
+            letter-spacing: 4px;
+            border: 3px solid rgba(139,92,246,0.3);
+        }
+
+        #submitBtn {
+            font-size: 1.3rem;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.15s;
+        }
+        #submitBtn:hover { transform: scale(1.05); }
+        #submitBtn:active { transform: scale(0.95); }
+
+        /* Feedback overlay */
+        #feedback {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(2px);
+        }
+
+        .feedback-box {
+            padding: 32px 48px;
+            border-radius: 24px;
+            font-size: 2rem;
+            font-weight: 800;
+            text-align: center;
+            animation: feedbackPop 0.3s ease-out;
+        }
+
+        .feedback-correct {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            color: #166534;
+            box-shadow: 0 8px 32px rgba(34,197,94,0.3);
+        }
+
+        .feedback-wrong {
+            background: linear-gradient(135deg, #fef2f2, #fecaca);
+            color: #991b1b;
+            box-shadow: 0 8px 32px rgba(239,68,68,0.3);
+        }
+
+        @keyframes feedbackPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== GAME OVER SCREEN ===== */
+        #endScreen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 20px;
+            padding: 32px;
+            text-align: center;
+        }
+
+        #endScreen h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #4c1d95;
+        }
+
+        #finalScore {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #22c55e;
+        }
+
+        #resultsTable {
+            width: 100%;
+            max-width: 440px;
+            border-collapse: collapse;
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+            overflow: hidden;
+            font-size: 1rem;
+        }
+
+        #resultsTable th {
+            background: rgba(139,92,246,0.15);
+            padding: 8px 12px;
+            font-weight: 700;
+            color: #4c1d95;
+        }
+
+        #resultsTable td {
+            padding: 6px 12px;
+            border-top: 1px solid rgba(0,0,0,0.06);
+            text-align: center;
+        }
+
+        .result-correct { color: #16a34a; }
+        .result-wrong { color: #dc2626; }
+
+        /* Responsive */
+        @media (max-height: 700px) {
+            #challenge { font-size: 1.8rem; margin: 6px 0; }
+            #inputDisplay { font-size: 1.8rem; padding: 6px 24px; }
+            .play-header { margin-bottom: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <button id="langBtn" title="Change language"></button>
+    <div class="fixed-top-left">
+        <button id="micBtnFixed" title="Voice input">&#127908;</button>
+        <button id="restartBtnFixed" title="Restart">&#8634;</button>
+    </div>
+
+    <div id="app">
+        <!-- START SCREEN -->
+        <div id="startScreen">
+            <h1 id="titleText">Multiply Quest!</h1>
+            <p id="instructionsText"></p>
+            <div id="timerSetting" style="display:flex; align-items:center; gap:12px;">
+                <label id="timerLabel" for="timerSelect" style="font-size:1.1rem; font-weight:600; color:#6b21a8;">&#9200;</label>
+                <input id="timerSelect" type="range" min="5" max="30" step="5" value="15"
+                    style="width:140px; accent-color:#7c3aed;">
+                <span id="timerValue" style="font-size:1.2rem; font-weight:700; color:#4c1d95; min-width:40px;">10s</span>
+            </div>
+            <button class="btn btn-start" id="startBtn"></button>
+        </div>
+
+        <!-- PLAY SCREEN -->
+        <div id="playScreen">
+            <div class="play-header">
+                <span id="progress"></span>
+                <div class="timer-container">
+                    <canvas id="timerCanvas"></canvas>
+                    <span id="timerText">10</span>
+                </div>
+            </div>
+
+            <h2 id="challenge"></h2>
+            <canvas id="ballCanvas"></canvas>
+
+            <div id="inputArea">
+                <span id="inputDisplay">_</span>
+                <button id="submitBtn">OK</button>
+            </div>
+            <div id="speechDebug" style="font-size:0.85rem; color:#6b21a8; opacity:0.7; text-align:center; min-height:1.2em;"></div>
+        </div>
+
+        <!-- FEEDBACK OVERLAY -->
+        <div id="feedback">
+            <div class="feedback-box" id="feedbackBox"></div>
+        </div>
+
+        <!-- GAME OVER SCREEN -->
+        <div id="endScreen">
+            <h1 id="gameOverTitle"></h1>
+            <div id="finalScore"></div>
+            <p id="scoreLabel"></p>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th id="thProblem"></th>
+                        <th id="thAnswer"></th>
+                        <th id="thYours"></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+            <button class="btn btn-restart" id="restartBtn"></button>
+        </div>
+    </div>
+
+    <script>
+    // ===== TRANSLATIONS =====
+    const LANGS = ['en', 'es', 'pl'];
+    const FLAGS = { en: '\u{1F1EC}\u{1F1E7}', es: '\u{1F1EA}\u{1F1F8}', pl: '\u{1F1F5}\u{1F1F1}' };
+    const SPEECH_LANG = { en: 'en-US', es: 'es-ES', pl: 'pl-PL' };
+
+    const T = {
+        en: {
+            title: 'Multiply Quest!',
+            instructions: 'Answer 10 multiplication challenges!\nType your answer or use the microphone.',
+            start: 'Start Game!',
+            whatIs: 'What is',
+            questionMark: '?',
+            correct: 'Correct!',
+            answerIs: 'The answer is',
+            timeUp: 'Time up!',
+            gameOver: 'Game Over!',
+            scoreOf: 'out of 10',
+            playAgain: 'Play Again!',
+            problem: 'Problem',
+            answer: 'Answer',
+            yours: 'Yours',
+        },
+        es: {
+            title: '\u00a1Multiply Quest!',
+            instructions: '\u00a1Responde 10 desaf\u00edos de multiplicaci\u00f3n!\nEscribe tu respuesta o usa el micr\u00f3fono.',
+            start: '\u00a1Empezar!',
+            whatIs: 'Cu\u00e1nto es',
+            questionMark: '?',
+            correct: '\u00a1Correcto!',
+            answerIs: 'La respuesta es',
+            timeUp: '\u00a1Se acab\u00f3 el tiempo!',
+            gameOver: '\u00a1Fin del juego!',
+            scoreOf: 'de 10',
+            playAgain: '\u00a1Jugar de nuevo!',
+            problem: 'Problema',
+            answer: 'Respuesta',
+            yours: 'Tuya',
+        },
+        pl: {
+            title: 'Multiply Quest!',
+            instructions: 'Odpowiedz na 10 wyzwa\u0144 mno\u017cenia!\nWpisz odpowied\u017a lub u\u017cyj mikrofonu.',
+            start: 'Zaczynamy!',
+            whatIs: 'Ile to',
+            questionMark: '?',
+            correct: 'Dobrze!',
+            answerIs: 'Odpowied\u017a to',
+            timeUp: 'Czas min\u0105\u0142!',
+            gameOver: 'Koniec gry!',
+            scoreOf: 'z 10',
+            playAgain: 'Zagraj ponownie!',
+            problem: 'Zadanie',
+            answer: 'Wynik',
+            yours: 'Tw\u00f3j',
+        }
+    };
+
+    let currentLang = localStorage.getItem('multiplyLang') || 'en';
+
+    function t(key) { return T[currentLang][key]; }
+
+    function nextLang() {
+        const idx = LANGS.indexOf(currentLang);
+        return LANGS[(idx + 1) % LANGS.length];
+    }
+
+    function updateLangButton() {
+        document.getElementById('langBtn').textContent = FLAGS[currentLang];
+    }
+
+    function applyTranslations() {
+        document.getElementById('titleText').textContent = t('title');
+        document.getElementById('instructionsText').textContent = t('instructions');
+        document.getElementById('startBtn').textContent = t('start');
+        document.getElementById('gameOverTitle').textContent = t('gameOver');
+        document.getElementById('restartBtn').textContent = t('playAgain');
+        document.getElementById('thProblem').textContent = t('problem');
+        document.getElementById('thAnswer').textContent = t('answer');
+        document.getElementById('thYours').textContent = t('yours');
+        document.documentElement.lang = currentLang;
+        updateLangButton();
+        // Update challenge text if playing
+        if (game.state === 'playing' && game.challenges.length > 0) {
+            const c = game.challenges[game.currentIndex];
+            document.getElementById('challenge').textContent =
+                `${t('whatIs')} ${c.a} \u00d7 ${c.b} ${t('questionMark')}`;
+        }
+    }
+
+    document.getElementById('langBtn').addEventListener('click', () => {
+        currentLang = nextLang();
+        localStorage.setItem('multiplyLang', currentLang);
+        applyTranslations();
+        // Restart voice recognition with new language if active
+        if (recognition && isListening) {
+            recognition.stop();
+            setTimeout(() => {
+                recognition.lang = SPEECH_LANG[currentLang];
+                recognition.start();
+            }, 200);
+        }
+    });
+
+    // ===== SPOKEN NUMBER PARSING =====
+    const SPOKEN_NUMBERS = {
+        en: {
+            ones: { zero:0, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9,
+                    ten:10, eleven:11, twelve:12, thirteen:13, fourteen:14, fifteen:15, sixteen:16,
+                    seventeen:17, eighteen:18, nineteen:19 },
+            tens: { twenty:20, thirty:30, forty:40, fifty:50, sixty:60, seventy:70, eighty:80 }
+        },
+        es: {
+            direct: { cero:0, uno:1, una:1, dos:2, tres:3, cuatro:4, cinco:5, seis:6, siete:7, ocho:8, nueve:9,
+                      diez:10, once:11, doce:12, trece:13, catorce:14, quince:15,
+                      diecis\u00e9is:16, diecisiete:17, dieciocho:18, diecinueve:19,
+                      veinte:20, veintiuno:21, veintid\u00f3s:22, veintitr\u00e9s:23, veinticuatro:24,
+                      veinticinco:25, veintis\u00e9is:26, veintisiete:27, veintiocho:28, veintinueve:29,
+                      treinta:30, cuarenta:40, cincuenta:50, sesenta:60, setenta:70, ochenta:80 },
+            tens: { treinta:30, cuarenta:40, cincuenta:50, sesenta:60, setenta:70, ochenta:80 },
+            ones: { uno:1, una:1, dos:2, tres:3, cuatro:4, cinco:5, seis:6, siete:7, ocho:8, nueve:9 }
+        },
+        pl: {
+            direct: { zero:0, jeden:1, dwa:2, trzy:3, cztery:4, 'pi\u0119\u0107':5, sze\u015b\u0107:6,
+                      siedem:7, osiem:8, 'dziewi\u0119\u0107':9, 'dziesi\u0119\u0107':10,
+                      jedena\u015bcie:11, 'dwana\u015bcie':12, 'trzyna\u015bcie':13, 'czterna\u015bcie':14,
+                      'pi\u0119tna\u015bcie':15, 'szesna\u015bcie':16, 'siedemna\u015bcie':17,
+                      'osiemna\u015bcie':18, 'dziewi\u0119tna\u015bcie':19,
+                      'dwadzie\u015bcia':20, 'trzydzie\u015bci':30, 'czterdzie\u015bci':40,
+                      'pi\u0119\u0107dziesi\u0105t':50, 'sze\u015b\u0107dziesi\u0105t':60,
+                      'siedemdziesi\u0105t':70, 'osiemdziesi\u0105t':80 },
+            tens: { 'dwadzie\u015bcia':20, 'trzydzie\u015bci':30, 'czterdzie\u015bci':40,
+                    'pi\u0119\u0107dziesi\u0105t':50, 'sze\u015b\u0107dziesi\u0105t':60,
+                    'siedemdziesi\u0105t':70, 'osiemdziesi\u0105t':80 },
+            ones: { jeden:1, dwa:2, trzy:3, cztery:4, 'pi\u0119\u0107':5, 'sze\u015b\u0107':6,
+                    siedem:7, osiem:8, 'dziewi\u0119\u0107':9 }
+        }
+    };
+
+    function parseSpokenNumber(text) {
+        text = text.trim().toLowerCase();
+        // Try direct numeric parse first
+        const num = parseInt(text, 10);
+        if (!isNaN(num) && num >= 0 && num <= 81) return num;
+
+        if (currentLang === 'en') {
+            const d = SPOKEN_NUMBERS.en;
+            if (d.ones[text] !== undefined) return d.ones[text];
+            if (d.tens[text] !== undefined) return d.tens[text];
+            // Compound: "twenty one", "forty-two"
+            for (const [tw, tv] of Object.entries(d.tens)) {
+                for (const [ow, ov] of Object.entries(d.ones)) {
+                    if (ov >= 1 && ov <= 9 && (text === `${tw} ${ow}` || text === `${tw}-${ow}`))
+                        return tv + ov;
+                }
+            }
+        } else if (currentLang === 'es') {
+            const d = SPOKEN_NUMBERS.es;
+            if (d.direct[text] !== undefined) return d.direct[text];
+            // Compound: "treinta y uno"
+            for (const [tw, tv] of Object.entries(d.tens)) {
+                for (const [ow, ov] of Object.entries(d.ones)) {
+                    if (text === `${tw} y ${ow}`) return tv + ov;
+                }
+            }
+        } else if (currentLang === 'pl') {
+            const d = SPOKEN_NUMBERS.pl;
+            if (d.direct[text] !== undefined) return d.direct[text];
+            // Compound: "dwadziescia jeden"
+            for (const [tw, tv] of Object.entries(d.tens)) {
+                for (const [ow, ov] of Object.entries(d.ones)) {
+                    if (text === `${tw} ${ow}`) return tv + ov;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    // ===== FACTORIZATION =====
+    function primeFactors(n) {
+        const factors = [];
+        for (let d = 2; d * d <= n; d++) {
+            while (n % d === 0) { factors.push(d); n /= d; }
+        }
+        if (n > 1) factors.push(n);
+        return factors;
+    }
+
+    function largestPrimeFactor(n) {
+        if (n <= 1) return 1;
+        const f = primeFactors(n);
+        return f[f.length - 1];
+    }
+
+    function getColorBlockInfo(a, b) {
+        const rowBlockSize = largestPrimeFactor(a);
+        const colBlockSize = largestPrimeFactor(b);
+        return {
+            rowBlockSize,
+            colBlockSize,
+            numRowGroups: a / rowBlockSize,
+            numColGroups: b / colBlockSize
+        };
+    }
+
+    const COLORS = [
+        '#FF6B6B', '#4ECDC4', '#FFE66D', '#A78BFA',
+        '#34D399', '#F97316', '#60A5FA', '#F472B6',
+        '#FBBF24', '#6EE7B7', '#C084FC', '#FB923C'
+    ];
+
+    function getBallColor(row, col, blockInfo) {
+        const rg = Math.floor(row / blockInfo.rowBlockSize);
+        const cg = Math.floor(col / blockInfo.colBlockSize);
+        const idx = rg * blockInfo.numColGroups + cg;
+        return COLORS[idx % COLORS.length];
+    }
+
+    // ===== CANVAS RENDERING =====
+    function drawBallGrid(a, b) {
+        const canvas = document.getElementById('ballCanvas');
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, rect.width, rect.height);
+
+        const W = rect.width;
+        const H = rect.height;
+        const padding = 24;
+        const availW = W - 2 * padding;
+        const availH = H - 2 * padding;
+
+        const maxFromW = availW / (b * 2.2);
+        const maxFromH = availH / (a * 2.2);
+        const ballRadius = Math.min(maxFromW, maxFromH, 24);
+        const spacing = ballRadius * 2.4;
+
+        const gridW = (b - 1) * spacing;
+        const gridH = (a - 1) * spacing;
+        const offsetX = (W - gridW) / 2;
+        const offsetY = (H - gridH) / 2;
+
+        const blockInfo = getColorBlockInfo(a, b);
+
+        // Draw divider lines first (behind balls)
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        for (let rg = 1; rg < blockInfo.numRowGroups; rg++) {
+            const y = offsetY + rg * blockInfo.rowBlockSize * spacing - spacing / 2;
+            ctx.beginPath();
+            ctx.moveTo(offsetX - spacing * 0.6, y);
+            ctx.lineTo(offsetX + gridW + spacing * 0.6, y);
+            ctx.stroke();
+        }
+        for (let cg = 1; cg < blockInfo.numColGroups; cg++) {
+            const x = offsetX + cg * blockInfo.colBlockSize * spacing - spacing / 2;
+            ctx.beginPath();
+            ctx.moveTo(x, offsetY - spacing * 0.6);
+            ctx.lineTo(x, offsetY + gridH + spacing * 0.6);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+
+        // Draw balls
+        for (let row = 0; row < a; row++) {
+            for (let col = 0; col < b; col++) {
+                const x = offsetX + col * spacing;
+                const y = offsetY + row * spacing;
+                const color = getBallColor(row, col, blockInfo);
+
+                // Ball shadow
+                ctx.beginPath();
+                ctx.arc(x + 1, y + 2, ballRadius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                ctx.fill();
+
+                // Ball body
+                ctx.beginPath();
+                ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+                ctx.fillStyle = color;
+                ctx.fill();
+
+                // 3D highlight
+                const grad = ctx.createRadialGradient(
+                    x - ballRadius * 0.3, y - ballRadius * 0.35, ballRadius * 0.1,
+                    x, y, ballRadius
+                );
+                grad.addColorStop(0, 'rgba(255,255,255,0.55)');
+                grad.addColorStop(0.6, 'rgba(255,255,255,0.1)');
+                grad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.beginPath();
+                ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+        }
+    }
+
+    // ===== TIMER RENDERING =====
+    function drawTimer(timeLeft) {
+        const canvas = document.getElementById('timerCanvas');
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = 56 * dpr;
+        canvas.height = 56 * dpr;
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        const cx = 28, cy = 28, r = 24;
+        const fraction = Math.max(0, timeLeft / timerDuration);
+
+        // Background ring
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+
+        // Progress ring
+        let color;
+        if (fraction > 0.5) color = '#22c55e';
+        else if (fraction > 0.25) color = '#eab308';
+        else color = '#ef4444';
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + fraction * Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        document.getElementById('timerText').style.color = color;
+        document.getElementById('timerText').textContent = Math.ceil(timeLeft);
+    }
+
+    // ===== TIMER CONFIG =====
+    let timerDuration = parseInt(localStorage.getItem('multiplyTimer'), 10) || 15;
+    const timerSelect = document.getElementById('timerSelect');
+    const timerValue = document.getElementById('timerValue');
+    timerSelect.value = timerDuration;
+    timerValue.textContent = timerDuration + 's';
+    timerSelect.addEventListener('input', () => {
+        timerDuration = parseInt(timerSelect.value, 10);
+        timerValue.textContent = timerDuration + 's';
+        localStorage.setItem('multiplyTimer', timerDuration);
+    });
+
+    // ===== GAME STATE =====
+    const game = {
+        state: 'ready',
+        challenges: [],
+        currentIndex: 0,
+        score: { correct: 0, wrong: 0 },
+        timer: null,
+        timeLeft: 0,
+        userInput: '',
+        results: []
+    };
+
+    function generateChallenges() {
+        const all = [];
+        for (let a = 1; a <= 9; a++) {
+            for (let b = 1; b <= 9; b++) {
+                all.push({ a, b });
+            }
+        }
+        // Fisher-Yates shuffle
+        for (let i = all.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [all[i], all[j]] = [all[j], all[i]];
+        }
+        return all.slice(0, 10);
+    }
+
+    function startGame() {
+        game.state = 'playing';
+        game.challenges = generateChallenges();
+        game.currentIndex = 0;
+        game.score = { correct: 0, wrong: 0 };
+        game.results = [];
+        game.userInput = '';
+
+        document.getElementById('startScreen').style.display = 'none';
+        document.getElementById('endScreen').style.display = 'none';
+        document.getElementById('playScreen').style.display = 'flex';
+        document.getElementById('restartBtnFixed').style.display = 'flex';
+
+        // Start voice recognition if mic was toggled on
+        if (recognition && isListening) {
+            recognition.lang = SPEECH_LANG[currentLang];
+            try { recognition.start(); } catch(e) {}
+        }
+
+        startChallenge();
+    }
+
+    function startChallenge() {
+        const c = game.challenges[game.currentIndex];
+        game.userInput = '';
+        game.timeLeft = timerDuration;
+
+        document.getElementById('challenge').textContent =
+            `${t('whatIs')} ${c.a} \u00d7 ${c.b} ${t('questionMark')}`;
+        document.getElementById('progress').textContent =
+            `${game.currentIndex + 1} / 10`;
+        document.getElementById('inputDisplay').textContent = '_';
+        document.getElementById('speechDebug').textContent = '';
+        drawBallGrid(c.a, c.b);
+        drawTimer(timerDuration);
+
+        // Start timer
+        clearInterval(game.timer);
+        game.timer = setInterval(() => {
+            game.timeLeft -= 0.1;
+            drawTimer(game.timeLeft);
+            if (game.timeLeft <= 0) {
+                clearInterval(game.timer);
+                game.timeLeft = 0;
+                handleTimeout();
+            }
+        }, 100);
+
+        // Voice recognition stays running continuously — no start/stop per challenge
+    }
+
+    function handleTimeout() {
+        const c = game.challenges[game.currentIndex];
+        const expected = c.a * c.b;
+        game.results.push({
+            a: c.a, b: c.b, expected, given: null, correct: false
+        });
+        game.score.wrong++;
+        showFeedback(false, expected, true);
+    }
+
+    function submitAnswer(answer) {
+        if (game.state !== 'playing') return;
+        clearInterval(game.timer);
+
+        const c = game.challenges[game.currentIndex];
+        const expected = c.a * c.b;
+        const correct = answer === expected;
+
+        game.results.push({
+            a: c.a, b: c.b, expected, given: answer, correct
+        });
+
+        if (correct) game.score.correct++;
+        else game.score.wrong++;
+
+        showFeedback(correct, expected, false);
+    }
+
+    function showFeedback(correct, expected, timeout) {
+        game.state = 'feedback';
+        const fb = document.getElementById('feedback');
+        const box = document.getElementById('feedbackBox');
+
+        if (correct) {
+            box.textContent = t('correct');
+            box.className = 'feedback-box feedback-correct';
+        } else if (timeout) {
+            box.textContent = `${t('timeUp')} ${t('answerIs')} ${expected}`;
+            box.className = 'feedback-box feedback-wrong';
+        } else {
+            box.textContent = `${t('answerIs')} ${expected}`;
+            box.className = 'feedback-box feedback-wrong';
+        }
+
+        fb.style.display = 'flex';
+
+        setTimeout(() => {
+            fb.style.display = 'none';
+            game.currentIndex++;
+            if (game.currentIndex >= 10) {
+                showGameOver();
+            } else {
+                game.state = 'playing';
+                startChallenge();
+            }
+        }, 1500);
+    }
+
+    function showGameOver() {
+        game.state = 'gameOver';
+        // Stop voice recognition
+        if (recognition && isListening) {
+            isListening = false;
+            document.getElementById('micBtnFixed').classList.remove('listening');
+            try { recognition.stop(); } catch(e) {}
+        }
+        document.getElementById('playScreen').style.display = 'none';
+        document.getElementById('restartBtnFixed').style.display = 'none';
+        document.getElementById('endScreen').style.display = 'flex';
+
+        document.getElementById('gameOverTitle').textContent = t('gameOver');
+        document.getElementById('finalScore').textContent = `${game.score.correct}`;
+        document.getElementById('scoreLabel').textContent = t('scoreOf');
+        document.getElementById('restartBtn').textContent = t('playAgain');
+        document.getElementById('thProblem').textContent = t('problem');
+        document.getElementById('thAnswer').textContent = t('answer');
+        document.getElementById('thYours').textContent = t('yours');
+
+        const tbody = document.getElementById('resultsBody');
+        tbody.innerHTML = '';
+        game.results.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            const givenText = r.given !== null ? r.given : '\u2014';
+            const icon = r.correct ? '\u2705' : '\u274c';
+            const cls = r.correct ? 'result-correct' : 'result-wrong';
+            tr.innerHTML = `
+                <td>${i + 1}</td>
+                <td>${r.a} \u00d7 ${r.b}</td>
+                <td>${r.expected}</td>
+                <td class="${cls}">${givenText}</td>
+                <td>${icon}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ===== KEYBOARD INPUT =====
+    document.addEventListener('keydown', (e) => {
+        if (game.state !== 'playing') return;
+
+        if (e.key >= '0' && e.key <= '9') {
+            if (game.userInput.length < 2) {
+                game.userInput += e.key;
+                document.getElementById('inputDisplay').textContent = game.userInput;
+            }
+        } else if (e.key === 'Backspace') {
+            game.userInput = game.userInput.slice(0, -1);
+            document.getElementById('inputDisplay').textContent = game.userInput || '_';
+        } else if (e.key === 'Enter') {
+            if (game.userInput.length > 0) {
+                submitAnswer(parseInt(game.userInput, 10));
+            }
+        }
+    });
+
+    document.getElementById('submitBtn').addEventListener('click', () => {
+        if (game.state === 'playing' && game.userInput.length > 0) {
+            submitAnswer(parseInt(game.userInput, 10));
+        }
+    });
+
+    // ===== VOICE RECOGNITION =====
+    let recognition = null;
+    let isListening = false;
+
+    function initVoiceRecognition() {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+            document.getElementById('micBtnFixed').style.display = 'none';
+            return;
+        }
+
+        recognition = new SR();
+        recognition.lang = SPEECH_LANG[currentLang];
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const result = event.results[i];
+                const transcript = result[0].transcript.trim();
+                const dbg = document.getElementById('speechDebug');
+
+                if (!result.isFinal) {
+                    // Show interim feedback so user knows mic is hearing them
+                    dbg.textContent = `\u{1F399} "${transcript}" ...`;
+                    continue;
+                }
+
+                const number = parseSpokenNumber(transcript);
+                dbg.textContent = `\u{1F399} "${transcript}" \u2192 ${number !== null ? number : '?'}`;
+
+                if (number !== null && game.state === 'playing') {
+                    game.userInput = String(number);
+                    document.getElementById('inputDisplay').textContent = game.userInput;
+                    submitAnswer(number);
+                }
+            }
+        };
+
+        recognition.onend = () => {
+            // Browser may kill the session; restart with a delay to avoid permission re-prompts
+            if (isListening && (game.state === 'playing' || game.state === 'feedback')) {
+                setTimeout(() => {
+                    if (isListening) {
+                        recognition.lang = SPEECH_LANG[currentLang];
+                        try { recognition.start(); } catch(e) {}
+                    }
+                }, 300);
+            }
+        };
+
+        recognition.onerror = (event) => {
+            if (event.error === 'no-speech' || event.error === 'aborted') return;
+            console.warn('Speech error:', event.error);
+        };
+    }
+
+    document.getElementById('micBtnFixed').addEventListener('click', () => {
+        if (!recognition) return;
+
+        isListening = !isListening;
+        const btn = document.getElementById('micBtnFixed');
+
+        if (isListening) {
+            btn.classList.add('listening');
+            recognition.lang = SPEECH_LANG[currentLang];
+            try { recognition.start(); } catch(e) {}
+        } else {
+            btn.classList.remove('listening');
+            try { recognition.stop(); } catch(e) {}
+        }
+    });
+
+    document.getElementById('restartBtnFixed').addEventListener('click', () => {
+        // Stop current game cleanly
+        clearInterval(game.timer);
+        if (recognition && isListening) {
+            isListening = false;
+            document.getElementById('micBtnFixed').classList.remove('listening');
+            try { recognition.stop(); } catch(e) {}
+        }
+        game.state = 'ready';
+        document.getElementById('playScreen').style.display = 'none';
+        document.getElementById('endScreen').style.display = 'none';
+        document.getElementById('feedback').style.display = 'none';
+        document.getElementById('restartBtnFixed').style.display = 'none';
+        document.getElementById('startScreen').style.display = 'flex';
+    });
+
+    // ===== EVENT WIRING =====
+    document.getElementById('startBtn').addEventListener('click', startGame);
+    document.getElementById('restartBtn').addEventListener('click', startGame);
+
+    // Resize handler for canvas
+    window.addEventListener('resize', () => {
+        if (game.state === 'playing' || game.state === 'feedback') {
+            const c = game.challenges[game.currentIndex];
+            if (c) drawBallGrid(c.a, c.b);
+        }
+    });
+
+    // ===== INIT =====
+    applyTranslations();
+    initVoiceRecognition();
+    </script>
+</body>
+</html>
