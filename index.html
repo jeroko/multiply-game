@@ -391,6 +391,9 @@
 
             <div id="inputArea">
                 <span id="inputDisplay">_</span>
+                <input id="mobileInput" type="tel" inputmode="numeric" pattern="[0-9]*"
+                    maxlength="2" autocomplete="off"
+                    style="position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;">
                 <button id="submitBtn">OK</button>
             </div>
             <div id="speechDebug" style="font-size:0.85rem; color:#6b21a8; opacity:0.7; text-align:center; min-height:1.2em;"></div>
@@ -832,6 +835,9 @@
             `${game.currentIndex + 1} / 10`;
         document.getElementById('inputDisplay').textContent = '_';
         document.getElementById('speechDebug').textContent = '';
+        const mi = document.getElementById('mobileInput');
+        mi.value = '';
+        mi.focus();
         drawBallGrid(c.a, c.b);
         drawTimer(timerDuration);
 
@@ -947,8 +953,34 @@
     }
 
     // ===== KEYBOARD INPUT =====
+    const mobileInput = document.getElementById('mobileInput');
+
+    // Tap the display area to focus the hidden input (opens mobile keyboard)
+    document.getElementById('inputDisplay').addEventListener('click', () => {
+        if (game.state === 'playing') mobileInput.focus();
+    });
+
+    // Handle mobile keyboard input
+    mobileInput.addEventListener('input', () => {
+        if (game.state !== 'playing') return;
+        const val = mobileInput.value.replace(/[^0-9]/g, '').slice(0, 2);
+        mobileInput.value = val;
+        game.userInput = val;
+        document.getElementById('inputDisplay').textContent = val || '_';
+    });
+
+    // Submit on Enter from mobile keyboard
+    mobileInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && game.state === 'playing' && game.userInput.length > 0) {
+            e.preventDefault();
+            submitAnswer(parseInt(game.userInput, 10));
+        }
+    });
+
+    // Desktop keyboard support
     document.addEventListener('keydown', (e) => {
         if (game.state !== 'playing') return;
+        if (document.activeElement === mobileInput) return;
 
         if (e.key >= '0' && e.key <= '9') {
             if (game.userInput.length < 2) {
