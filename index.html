@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Multiply Quest!</title>
     <style>
         * {
@@ -14,7 +14,7 @@
         body {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 50%, #d4c5f9 100%);
-            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -24,7 +24,7 @@
         #app {
             width: 100%;
             max-width: 600px;
-            height: 100vh;
+            height: 100dvh;
             max-height: 900px;
             position: relative;
             display: flex;
@@ -35,14 +35,14 @@
         /* Language switcher */
         #langBtn {
             position: fixed;
-            top: 16px;
-            right: 16px;
-            font-size: 2rem;
+            top: calc(12px + env(safe-area-inset-top));
+            right: calc(12px + env(safe-area-inset-right));
+            font-size: 1.6rem;
             background: rgba(255,255,255,0.7);
             border: none;
-            border-radius: 12px;
-            width: 52px;
-            height: 52px;
+            border-radius: 10px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
             z-index: 100;
             display: flex;
@@ -57,20 +57,20 @@
         /* Fixed top-left buttons: mic + restart */
         .fixed-top-left {
             position: fixed;
-            top: 16px;
-            left: 16px;
+            top: calc(12px + env(safe-area-inset-top));
+            left: calc(12px + env(safe-area-inset-left));
             z-index: 100;
             display: flex;
-            gap: 8px;
+            gap: 6px;
         }
 
         #micBtnFixed {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             background: rgba(255,255,255,0.7);
             border: 2px solid transparent;
-            border-radius: 12px;
-            width: 52px;
-            height: 52px;
+            border-radius: 10px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -87,12 +87,12 @@
         }
 
         #restartBtnFixed {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             background: rgba(255,255,255,0.7);
             border: none;
-            border-radius: 12px;
-            width: 52px;
-            height: 52px;
+            border-radius: 10px;
+            width: 44px;
+            height: 44px;
             cursor: pointer;
             display: none;
             align-items: center;
@@ -111,7 +111,7 @@
             justify-content: center;
             height: 100%;
             gap: 24px;
-            padding: 32px;
+            padding: 32px 32px calc(32px + env(safe-area-inset-bottom)) 32px;
             text-align: center;
         }
 
@@ -159,15 +159,16 @@
             align-items: center;
             width: 100%;
             height: 100%;
-            padding: 16px;
+            padding: calc(12px + env(safe-area-inset-top)) 16px calc(12px + env(safe-area-inset-bottom)) 16px;
         }
 
         .play-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             width: 100%;
             margin-bottom: 8px;
+            gap: 16px;
         }
 
         #progress {
@@ -223,7 +224,7 @@
         }
 
         #inputArea {
-            margin: 12px 0 8px 0;
+            margin: 12px 0 4px 0;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -303,8 +304,9 @@
             justify-content: center;
             height: 100%;
             gap: 20px;
-            padding: 32px;
+            padding: 32px 32px calc(32px + env(safe-area-inset-bottom)) 32px;
             text-align: center;
+            overflow-y: auto;
         }
 
         #endScreen h1 {
